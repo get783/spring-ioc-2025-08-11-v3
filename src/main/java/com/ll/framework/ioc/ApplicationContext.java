@@ -1,6 +1,8 @@
 package com.ll.framework.ioc;
 
+import com.ll.framework.ioc.annotations.Bean;
 import com.ll.framework.ioc.annotations.Component;
+import com.ll.framework.ioc.annotations.Configuration;
 import com.ll.standard.util.Ut;
 import lombok.RequiredArgsConstructor;
 import org.reflections.Reflections;
@@ -21,10 +23,12 @@ public class ApplicationContext {
     }
 
     public void init() {
-        this.components = reflections.getTypesAnnotatedWith(Component.class);
+        this.components = reflections.getTypesAnnotatedWith(Bean.class);
 
         for (Class<?> component : components) {
             if (component.isInterface()) continue;
+            if (component.isAnnotationPresent(Configuration.class)) {
+            }
             genBean(component);
         }
     }
@@ -53,7 +57,7 @@ public class ApplicationContext {
 
             return (T) bean;
         } catch (Exception e) {
-            throw new RuntimeException("'%s' 빈 생성 실패: ".formatted(beanName), e);
+            throw new RuntimeException("'%s' 빈 생성 실패".formatted(beanName), e);
         }
     }
 
@@ -65,7 +69,12 @@ public class ApplicationContext {
         Class<?> component = components.stream()
                 .filter(c -> beanName.equals(Ut.str.lcfirst(c.getSimpleName())))
                 .findFirst()
-                .get();
+                .orElse(null);
+
+        if(component == null) {
+            throw new RuntimeException("'%s' 빈 찾기 실패".formatted(beanName));
+        }
+
         return genBean(component);
     }
 }
