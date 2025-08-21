@@ -40,7 +40,6 @@ public class ApplicationContext {
     public void genBeansFromMethods(Class<?> clazz) {
         try {
             Method[] methods = clazz.getDeclaredMethods();
-//            Object configInstance = genBean(clazz);
             Object configInstance = clazz.getDeclaredConstructor().newInstance();
 
             for (Method method : methods) {
@@ -69,13 +68,6 @@ public class ApplicationContext {
         }
 
         try {
-//            if (clazz.isInterface()) {
-//                Object bean = clazz.getDeclaredConstructor().newInstance();
-//                beans.put(beanName, bean);
-//
-//                return (T) bean;
-//            }
-
             Constructor<?> constructor = Arrays.stream(clazz.getDeclaredConstructors())
                     .filter(c -> c.isAnnotationPresent(RequiredArgsConstructor.class))
                     .findFirst()
