@@ -31,7 +31,6 @@ public class ApplicationContext {
 
             if (component.isAnnotationPresent(Configuration.class)) {
                 genBeansFromMethods(component);
-                continue;
             }
             genBean(component);
         }
