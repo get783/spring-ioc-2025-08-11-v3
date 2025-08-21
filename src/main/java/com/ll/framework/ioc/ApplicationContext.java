@@ -29,9 +29,6 @@ public class ApplicationContext {
         for (Class<?> component : components) {
             if (component.isInterface()) continue;
 
-            if (component.isAnnotationPresent(Configuration.class)) {
-                genBeansFromMethods(component);
-            }
             genBean(component);
         }
     }
@@ -64,6 +61,10 @@ public class ApplicationContext {
         String beanName = Ut.str.lcfirst(clazz.getSimpleName());
         if (beans.containsKey(beanName)) {
             return (T) beans.get(beanName);
+        }
+
+        if (clazz.isAnnotationPresent(Configuration.class)) {
+            genBeansFromMethods(clazz);
         }
 
         try {
