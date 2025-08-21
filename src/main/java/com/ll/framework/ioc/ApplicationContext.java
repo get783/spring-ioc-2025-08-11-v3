@@ -29,18 +29,25 @@ public class ApplicationContext {
         for (Class<?> component : components) {
             if (component.isInterface()) continue;
 
+            if (component.isAnnotationPresent(Configuration.class)) {
+                Object configInstance = genBean(component);
+                genBeansFromMethods(component, configInstance);
+                continue;
+            }
+
             genBean(component);
         }
     }
 
-    public void genBeansFromMethods(Class<?> clazz) {
+    public void genBeansFromMethods(Class<?> clazz, Object configInstance) {
         try {
             Method[] methods = clazz.getDeclaredMethods();
-            Object configInstance = clazz.getDeclaredConstructor().newInstance();
 
             for (Method method : methods) {
                 if (method.isAnnotationPresent(Bean.class)) {
                     String beanName = Ut.str.lcfirst(method.getName());
+
+                    if (beans.containsKey(beanName)) continue;
 
                     List<Object> dependencies = new ArrayList<>();
                     for (Class<?> parameterType : method.getParameterTypes()) {
@@ -61,10 +68,6 @@ public class ApplicationContext {
         String beanName = Ut.str.lcfirst(clazz.getSimpleName());
         if (beans.containsKey(beanName)) {
             return (T) beans.get(beanName);
-        }
-
-        if (clazz.isAnnotationPresent(Configuration.class)) {
-            genBeansFromMethods(clazz);
         }
 
         try {
