@@ -9,6 +9,7 @@ import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.*;
 
 public class ApplicationContext {
@@ -23,13 +24,39 @@ public class ApplicationContext {
     }
 
     public void init() {
-        this.components = reflections.getTypesAnnotatedWith(Bean.class);
+        this.components = reflections.getTypesAnnotatedWith(Component.class);
 
         for (Class<?> component : components) {
             if (component.isInterface()) continue;
+
             if (component.isAnnotationPresent(Configuration.class)) {
+                genBeansFromMethods(component);
             }
             genBean(component);
+        }
+    }
+
+    public void genBeansFromMethods(Class<?> clazz) {
+        try {
+            Method[] methods = clazz.getDeclaredMethods();
+            Object configInstance = clazz.getDeclaredConstructor().newInstance();
+
+            for (Method method : methods) {
+                if (method.isAnnotationPresent(Bean.class)) {
+                    String beanName = Ut.str.lcfirst(method.getName());
+
+                    List<Object> dependencies = new ArrayList<>();
+                    for (Class<?> parameterType : method.getParameterTypes()) {
+                        dependencies.add(genBean(parameterType));
+                    }
+
+                    Object bean = method.invoke(configInstance, dependencies.toArray());
+
+                    beans.put(beanName, bean);
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("'%s' 클래스의 @Bean 메서드 처리 실패".formatted(clazz.getSimpleName()), e);
         }
     }
 
@@ -71,7 +98,7 @@ public class ApplicationContext {
                 .findFirst()
                 .orElse(null);
 
-        if(component == null) {
+        if (component == null) {
             throw new RuntimeException("'%s' 빈 찾기 실패".formatted(beanName));
         }
 
